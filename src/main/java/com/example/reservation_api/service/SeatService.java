@@ -21,6 +21,10 @@ public class SeatService {
         return seatRepository.findAll();
     }
 
+    public Seat saveSeat(Seat seat) {
+        return seatRepository.save(seat);
+    }
+
     @Transactional
     public Seat reserveSeat(String seatNumber, String customerEmail) {
         Seat seat = seatRepository.findBySeatNumber(seatNumber)
