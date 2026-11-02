@@ -1,20 +1,23 @@
 package com.example.reservation_api.service;
 
-import java.util.List;
-
+import com.example.reservation_api.event.SeatReservedEvent;
+import com.example.reservation_api.model.Seat;
+import com.example.reservation_api.repository.SeatRepository;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.example.reservation_api.model.Seat;
-import com.example.reservation_api.repository.SeatRepository;
+import java.util.List;
 
 @Service
 public class SeatService {
 
     private final SeatRepository seatRepository;
+    private final KafkaTemplate<String, SeatReservedEvent> kafkaTemplate;
 
-    public SeatService(SeatRepository seatRepository) {
+    public SeatService(SeatRepository seatRepository, KafkaTemplate<String, SeatReservedEvent> kafkaTemplate) {
         this.seatRepository = seatRepository;
+        this.kafkaTemplate = kafkaTemplate;
     }
 
     public List<Seat> getAllSeats() {
@@ -36,6 +39,12 @@ public class SeatService {
 
         seat.setReserved(true);
         seat.setReservedBy(customerEmail);
-        return seatRepository.save(seat);
+        Seat updatedSeat = seatRepository.save(seat);
+
+        // Emit event to Kafka topic
+        SeatReservedEvent event = new SeatReservedEvent(seatNumber, customerEmail);
+        kafkaTemplate.send("seat-reservations", seatNumber, event);
+
+        return updatedSeat;
     }
 }
