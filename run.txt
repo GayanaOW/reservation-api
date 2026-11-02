@@ -1,0 +1,31 @@
+========================================================================
+ SEAT RESERVATION SYSTEM - RESTART & RUN GUIDE
+========================================================================
+
+1. START INFRASTRUCTURE (Docker Desktop must be running first)
+------------------------------------------------------------------------
+   docker compose up -d
+
+   *Verification:* Run `docker ps` to ensure both 'reservation_mysql' 
+   and 'reservation_kafka' show status as "Up".
+
+
+2. START SPRING BOOT APPLICATION
+------------------------------------------------------------------------
+   Using Maven Wrapper (PowerShell):
+   .\mvnw spring-boot:run
+
+
+3. TEST END-TO-END FLOW (Open a new PowerShell terminal)
+------------------------------------------------------------------------
+   # Create a new seat (A3)
+   Invoke-RestMethod -Method Post -Uri "http://localhost:8080/api/seats" -ContentType "application/json" -Body '{"seatNumber": "A3", "reserved": false}'
+
+   # Reserve seat A3 (This triggers the Kafka SeatReservedEvent)
+   Invoke-RestMethod -Method Post -Uri "http://localhost:8080/api/seats/A3/reserve?email=test@example.com"
+
+
+4. VERIFY KAFKA MESSAGES (Optional)
+------------------------------------------------------------------------
+   docker exec -it reservation_kafka /opt/kafka/bin/kafka-console-consumer.sh --bootstrap-server localhost:9092 --topic seat-reservations --from-beginning
+========================================================================
